@@ -3,6 +3,7 @@ package data_import
 import (
 	"bytes"
 	"encoding/xml"
+	"fmt"
 	"net/http"
 )
 
@@ -25,6 +26,8 @@ func TestPostOverpassAPI() error {
 	if derr != nil {
 		return derr
 	}
+
+	fmt.Println(len(extractedWays.Streets))
 
 	return nil
 }

@@ -1,9 +1,15 @@
 package data_import
 
-import "fmt"
+import (
+	"errors"
+	"fmt"
+	"strconv"
+	"strings"
+)
 
 const (
-	overpassAPIURL = "https://overpass-api.de/api/interpreter"
+	overpassAPIURL         = "https://overpass-api.de/api/interpreter"
+	boundingBoxExtentLimit = 0.75
 )
 
 type OverpassResponse interface {
@@ -27,8 +33,8 @@ type OverpassAPINode struct {
 }
 
 type OverpassAPIRequest struct {
-	filters     []OverpassAPIFilter
-	boundingBox OverpassAPIBoundingBox
+	Filters     []OverpassAPIFilter
+	BoundingBox OverpassAPIBoundingBox
 }
 
 type OverpassAPIFilter struct {
@@ -45,10 +51,79 @@ type OverpassAPIBoundingBox struct {
 
 func (r OverpassAPIRequest) GetString() (request string) {
 	request += "nwr "
-	for _, filter := range r.filters {
+	for _, filter := range r.Filters {
 		request += fmt.Sprintf(`["%s"~"%s"]`, filter.key, filter.value)
 	}
-	request += fmt.Sprintf(`\n(%f, %f, %f, %f);`, r.boundingBox.south, r.boundingBox.west, r.boundingBox.north, r.boundingBox.east)
+	request += "\n"
+	request += fmt.Sprintf(`(%f, %f, %f, %f);`, r.BoundingBox.south, r.BoundingBox.west, r.BoundingBox.north, r.BoundingBox.east)
 	request += "\n(._;>;);\nout body;"
 	return request
+}
+
+func ParseAsFilter(s string) (OverpassAPIFilter, error) {
+	rawWords := strings.ReplaceAll(s, "[\"", "")
+	rawWords = strings.ReplaceAll(rawWords, "\"~\"", " ")
+	rawWords = strings.ReplaceAll(rawWords, "\"]", "")
+	rawWords = strings.TrimSpace(rawWords)
+	wordsSplit := strings.Split(rawWords, " ")
+
+	if len(wordsSplit) != 2 {
+		err := fmt.Sprintf("error parsing as filter. expected 2 words. got %d words", len(wordsSplit))
+		return OverpassAPIFilter{}, errors.New(err)
+	}
+
+	filter := OverpassAPIFilter{
+		key:   wordsSplit[0],
+		value: wordsSplit[1],
+	}
+
+	return filter, nil
+}
+
+func ParseAsBoundingBox(s string) (OverpassAPIBoundingBox, error) {
+	rawValues := strings.Trim(s, "()")
+	listOfCoordinates := strings.Split(rawValues, ",")
+
+	if len(listOfCoordinates) != 4 {
+		return OverpassAPIBoundingBox{}, errors.New("incorrect number of values passed")
+	}
+
+	coordinateValues := make([]float32, 4)
+	for i, coordinateString := range listOfCoordinates {
+		coordinateCandidate, err := strconv.ParseFloat(strings.TrimSpace(coordinateString), 32)
+		if err != nil {
+			err_string := fmt.Sprintf("error converting %s to Float32: %s", coordinateString, err)
+			return OverpassAPIBoundingBox{}, errors.New(err_string)
+		}
+		coordinateValues[i] = float32(coordinateCandidate)
+	}
+
+	return CreateBoundingBox(coordinateValues[0], coordinateValues[1], coordinateValues[2], coordinateValues[3])
+}
+
+func CreateBoundingBox(s, w, n, e float32) (OverpassAPIBoundingBox, error) {
+	boundingBox := OverpassAPIBoundingBox{
+		south: s,
+		west:  w,
+		north: n,
+		east:  e,
+	}
+
+	if boundingBox.north-boundingBox.south > boundingBoxExtentLimit {
+		return OverpassAPIBoundingBox{}, errors.New("north south extent is too far")
+	}
+
+	if boundingBox.east-boundingBox.west > boundingBoxExtentLimit {
+		return OverpassAPIBoundingBox{}, errors.New("east west extent is too far")
+	}
+
+	if boundingBox.north < boundingBox.south {
+		return OverpassAPIBoundingBox{}, errors.New("north boundary must be farther north than the south boundary")
+	}
+
+	if boundingBox.east < boundingBox.west {
+		return OverpassAPIBoundingBox{}, errors.New("east boundary must be farther east than the west boundary")
+	}
+
+	return boundingBox, nil
 }
