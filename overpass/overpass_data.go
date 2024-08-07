@@ -1,4 +1,4 @@
-package overpass_import
+package overpass
 
 type OverpassData struct {
 	StreetResponse   OverpassStreetResponse
