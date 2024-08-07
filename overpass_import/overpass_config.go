@@ -1,4 +1,4 @@
-package data_import
+package overpass_import
 
 import (
 	"encoding/xml"
