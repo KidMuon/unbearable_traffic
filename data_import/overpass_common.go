@@ -8,8 +8,9 @@ import (
 )
 
 const (
-	overpassAPIURL         = "https://overpass-api.de/api/interpreter"
-	boundingBoxExtentLimit = 0.75
+	overpassAPIURL              = "https://overpass-api.de/api/interpreter"
+	boundingBoxExtentLimit      = 0.75
+	overpassAPI_standard_config = "config/overpassAPI_standard_import.xml"
 )
 
 type OverpassResponse interface {

@@ -7,7 +7,7 @@ import (
 )
 
 func main() {
-	err := data_import.ImportOverpassDataUsingConfig()
+	err := data_import.ImportOverpassData_Standard()
 	if err != nil {
 		log.Fatal(err)
 	}
