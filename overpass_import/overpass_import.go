@@ -4,12 +4,12 @@ import (
 	"fmt"
 )
 
-func ImportOverpassData(overpass_config OverpassAPI_config) error {
+func ImportOverpassData(overpass_config OverpassAPI_config) (OverpassData, error) {
 
 	bb := overpass_config.Bbox
 	region, err := CreateBoundingBox(bb.South, bb.West, bb.North, bb.East)
 	if err != nil {
-		return err
+		return OverpassData{}, err
 	}
 
 	streetRequest := OverpassAPIRequest{
@@ -19,14 +19,12 @@ func ImportOverpassData(overpass_config OverpassAPI_config) error {
 		filter_text := fmt.Sprintf(`["%s"~"%s"]`, filter.Key, filter.Value)
 		streetFilter, err := ParseAsFilter(filter_text)
 		if err != nil {
-			return err
+			return OverpassData{}, err
 		}
 		streetRequest.Filters = append(streetRequest.Filters, streetFilter)
 	}
 	streetResponse := OverpassStreetResponse{}
 	streetResponse.BuildResponse(streetRequest)
-	fmt.Println("Querying Streets...")
-	fmt.Printf("%d Streets in the area\n", streetResponse.GetOverpassObjectCount())
 
 	buildingRequest := OverpassAPIRequest{
 		BoundingBox: region,
@@ -35,22 +33,25 @@ func ImportOverpassData(overpass_config OverpassAPI_config) error {
 		filter_text := fmt.Sprintf(`["%s"~"%s"]`, filter.Key, filter.Value)
 		buildingFilter, err := ParseAsFilter(filter_text)
 		if err != nil {
-			return err
+			return OverpassData{}, err
 		}
 		buildingRequest.Filters = append(buildingRequest.Filters, buildingFilter)
 	}
 	buildingResponse := OverpassBuildingResponse{}
 	buildingResponse.BuildResponse(buildingRequest)
-	fmt.Println("Querying Buildings...")
-	fmt.Printf("%d Buildings in the area\n", buildingResponse.GetOverpassObjectCount())
 
-	return nil
+	overpassData := OverpassData{
+		StreetResponse:   streetResponse,
+		BuildingResponse: buildingResponse,
+	}
+
+	return overpassData, nil
 }
 
-func ImportOverpassData_Standard() error {
+func ImportOverpassData_Standard() (OverpassData, error) {
 	config, err := GetStandardConfig()
 	if err != nil {
-		return nil
+		return OverpassData{}, nil
 	}
 	return ImportOverpassData(config)
 }

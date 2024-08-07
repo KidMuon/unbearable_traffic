@@ -7,8 +7,10 @@ import (
 )
 
 func main() {
-	err := overpass_import.ImportOverpassData_Standard()
+	overpassData, err := overpass_import.ImportOverpassData_Standard()
 	if err != nil {
 		log.Fatal(err)
 	}
+	overpass_import.SummarizeOverpassData(overpassData)
+
 }
