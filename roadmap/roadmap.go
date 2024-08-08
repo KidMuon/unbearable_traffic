@@ -1,5 +1,7 @@
 package roadmap
 
+import "fmt"
+
 type NodeId string
 
 type Node struct {
@@ -88,4 +90,89 @@ func (rm RoadMap) simplify_RemoveRoadNode(id NodeId) {
 	rm[id_b] = change_node
 
 	delete(rm, id)
+}
+
+func TestSimplify() {
+	rn_A := RoadNode{
+		Node: Node{
+			Id: "A",
+		},
+		Edges: []Edge{
+			{
+				Id:   "B",
+				Cost: 10,
+			},
+		},
+	}
+
+	rn_B := RoadNode{
+		Node: Node{
+			Id: "B",
+		},
+		Edges: []Edge{
+			{
+				Id:   "A",
+				Cost: 10,
+			},
+			{
+				Id:   "C",
+				Cost: 10,
+			},
+		},
+	}
+
+	rn_C := RoadNode{
+		Node: Node{
+			Id: "C",
+		},
+		Edges: []Edge{
+			{
+				Id:   "B",
+				Cost: 10,
+			},
+			{
+				Id:   "D",
+				Cost: 10,
+			},
+			{
+				Id:   "E",
+				Cost: 10,
+			},
+		},
+	}
+
+	rn_D := RoadNode{
+		Node: Node{
+			Id: "D",
+		},
+		Edges: []Edge{
+			{
+				Id:   "C",
+				Cost: 10,
+			},
+		},
+	}
+
+	rn_E := RoadNode{
+		Node: Node{
+			Id: "E",
+		},
+		Edges: []Edge{
+			{
+				Id:   "C",
+				Cost: 10,
+			},
+		},
+	}
+
+	rm := make(RoadMap)
+	rm["A"] = rn_A
+	rm["B"] = rn_B
+	rm["C"] = rn_C
+	rm["D"] = rn_D
+	rm["E"] = rn_E
+
+	fmt.Println(rm)
+	rm.Simplify()
+	fmt.Println(rm)
 }
