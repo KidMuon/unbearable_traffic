@@ -1,11 +1,56 @@
 package convert
 
 import (
+	"math"
 	"strconv"
 
 	"github.com/KidMuon/unbearable_traffic/overpass"
 	"github.com/KidMuon/unbearable_traffic/roadmap"
 )
+
+func CreateRoadMap(waymap roadmap.WayMap) roadmap.RoadMap {
+	roadm := make(roadmap.RoadMap)
+	//First populate the roadnodes in the roadmap
+	for _, sliceOfSpatialNodes := range waymap {
+		for i := 0; i < len(sliceOfSpatialNodes); i++ {
+			sn := sliceOfSpatialNodes[i]
+			rn := roadmap.RoadNode{
+				Node: roadmap.Node{
+					Id:        sn.Id,
+					Longitude: sn.Longitude,
+					Latitude:  sn.Latitude,
+				},
+			}
+
+			roadm[sn.Id] = rn
+
+			if i == 0 {
+				continue
+			}
+			sn_prev := sliceOfSpatialNodes[i-1]
+			edge_cost := distance(sn.Longitude, sn.Latitude, sn_prev.Longitude, sn_prev.Latitude)
+			edge := roadmap.Edge{
+				Id:   sn_prev.Id,
+				Cost: edge_cost,
+			}
+			edge_prev := roadmap.Edge{
+				Id:   sn.Id,
+				Cost: edge_cost,
+			}
+
+			edge_node := roadm[sn.Id]
+			edge_node.AddEdge(edge)
+			roadm[sn.Id] = edge_node
+
+			edge_prev_node := roadm[sn_prev.Id]
+			edge_prev_node.AddEdge(edge_prev)
+			roadm[sn_prev.Id] = edge_prev_node
+		}
+	}
+	//Second go through creating edges
+
+	return roadm
+}
 
 func CreateWayMap(overpass_ways overpass.OverpassStreetResponse) roadmap.WayMap {
 	waymap := make(roadmap.WayMap)
@@ -34,21 +79,8 @@ func CreateWayMap(overpass_ways overpass.OverpassStreetResponse) roadmap.WayMap 
 	return waymap
 }
 
-func CreateRoadMap(waymap roadmap.WayMap) roadmap.RoadMap {
-	roadmap := make(roadmap.RoadMap)
-	//First populate the roadnodes in the roadmap
-	for _, sliceOfSpatialNodes := range waymap {
-		for _, sn := range sliceOfSpatialNodes {
-			rn := roadmap.RoadNode{
-				Node: roadmap.Node{
-					Id:        sn.Id,
-					Longitude: sn.Longitude,
-					Latitude:  sn.Latitude,
-				},
-			}
-			roadmap[sn.Id] = rn
-		}
-	}
-	//Second go through creating edges
-	return roadmap
+func distance(lon1, lat1, lon2, lat2 float32) float32 {
+	a := lon2 - lon1
+	b := lat2 - lat1
+	return float32(math.Hypot(float64(a), float64(b)))
 }
