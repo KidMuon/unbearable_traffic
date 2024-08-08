@@ -176,3 +176,14 @@ func TestSimplify() {
 	rm.Simplify()
 	fmt.Println(rm)
 }
+
+type WayMap map[WayId][]SpatialNode
+
+type WayId string
+
+type SpatialNode struct {
+	Id          NodeId
+	OrderNumber int
+	Longitude   float32
+	Latitude    float32
+}
