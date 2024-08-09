@@ -6,7 +6,6 @@ import (
 
 	"github.com/KidMuon/unbearable_traffic/convert"
 	"github.com/KidMuon/unbearable_traffic/overpass"
-	"github.com/KidMuon/unbearable_traffic/roadmap"
 )
 
 func main() {
@@ -14,15 +13,22 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println(overpassData.StreetResponse.Streets[1])
 	waymap := convert.CreateWayMap(overpassData.StreetResponse)
-	//fmt.Println(waymap["5590554"])
 	streetmap := convert.CreateRoadMap(waymap)
-	//fmt.Println(streetmap["41524705"])
-	fmt.Println(len(overpassData.StreetResponse.Nodes))
-	fmt.Println(len(streetmap))
+	intersectionCount := 0
+	for _, v := range streetmap {
+		if len(v.Edges) >= 3 {
+			intersectionCount++
+		}
+	}
+	fmt.Println("\n\n", intersectionCount, "\n\n------------")
 	streetmap.Simplify()
-	fmt.Println(len(streetmap))
+	intersectionCount = 0
+	for _, v := range streetmap {
+		if len(v.Edges) >= 3 {
+			intersectionCount++
+		}
+	}
+	fmt.Println("\n\n", intersectionCount, "\n\n------------")
 	overpass.SummarizeOverpassData(overpassData)
-	roadmap.TestSimplify()
 }

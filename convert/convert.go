@@ -14,15 +14,15 @@ func CreateRoadMap(waymap roadmap.WayMap) roadmap.RoadMap {
 	for _, sliceOfSpatialNodes := range waymap {
 		for i := 0; i < len(sliceOfSpatialNodes); i++ {
 			sn := sliceOfSpatialNodes[i]
-			rn := roadmap.RoadNode{
-				Node: roadmap.Node{
-					Id:        sn.Id,
-					Longitude: sn.Longitude,
-					Latitude:  sn.Latitude,
-				},
+			if _, ok := roadm[sn.Id]; !ok {
+				roadm[sn.Id] = roadmap.RoadNode{
+					Node: roadmap.Node{
+						Id:        sn.Id,
+						Longitude: sn.Longitude,
+						Latitude:  sn.Latitude,
+					},
+				}
 			}
-
-			roadm[sn.Id] = rn
 
 			if i == 0 {
 				continue
@@ -47,7 +47,6 @@ func CreateRoadMap(waymap roadmap.WayMap) roadmap.RoadMap {
 			roadm[sn_prev.Id] = edge_prev_node
 		}
 	}
-	//Second go through creating edges
 
 	return roadm
 }
@@ -74,6 +73,7 @@ func CreateWayMap(overpass_ways overpass.OverpassStreetResponse) roadmap.WayMap 
 			})
 			orderID++
 		}
+
 		waymap[roadmap.WayId(way.Id)] = sn
 	}
 	return waymap
