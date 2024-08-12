@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/KidMuon/unbearable_traffic/bearablemap"
 	"github.com/KidMuon/unbearable_traffic/convert"
 	"github.com/KidMuon/unbearable_traffic/overpass"
-	"github.com/KidMuon/unbearable_traffic/roadmap"
 )
 
 func main() {
@@ -17,7 +17,7 @@ func main() {
 	waymap := convert.CreateWayMap(overpassData.StreetResponse)
 	streetmap := convert.CreateRoadMap(waymap)
 	streetmap.Simplify()
-	streetmap = roadmap.EliminateDisconnectedNodes(streetmap)
+	streetmap = bearablemap.EliminateDisconnectedNodes(streetmap)
 	structuremap := convert.CreateBuildingMap(overpassData.BuildingResponse, streetmap)
 	fmt.Println(len(structuremap))
 	overpass.SummarizeOverpassData(overpassData)

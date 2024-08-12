@@ -1,9 +1,7 @@
-package buildingmap
+package bearablemap
 
 import (
 	"math"
-
-	"github.com/KidMuon/unbearable_traffic/roadmap"
 )
 
 type BuildingID string
@@ -17,9 +15,9 @@ var SchoolBuilding BuildingType = "school"
 
 type Building struct {
 	Id              BuildingID
-	ClosestRoadNode roadmap.NodeId
+	ClosestRoadNode NodeId
 	BuildingType    BuildingType
-	Nodes           []roadmap.Node
+	Nodes           []Node
 	AverageLocation struct {
 		Longitude float32
 		Latitude  float32
@@ -39,10 +37,10 @@ func (b *Building) AssignAverageLocation() {
 	b.AverageLocation.Longitude = sumLongitude / float32(len(b.Nodes))
 }
 
-func (b *Building) AssignClosestRoadNode(r roadmap.RoadMap) {
+func (b *Building) AssignClosestRoadNode(r RoadMap) {
 	minDistance := 10.0
 	thresholdDistance := 0.05
-	var closest roadmap.NodeId
+	var closest NodeId
 
 	var distance float64
 	for _, v := range r {
