@@ -92,91 +92,6 @@ func (rm RoadMap) simplify_RemoveRoadNode(id NodeId) {
 	delete(rm, id)
 }
 
-func TestSimplify() {
-	rn_A := RoadNode{
-		Node: Node{
-			Id: "A",
-		},
-		Edges: []Edge{
-			{
-				Id:   "B",
-				Cost: 10,
-			},
-		},
-	}
-
-	rn_B := RoadNode{
-		Node: Node{
-			Id: "B",
-		},
-		Edges: []Edge{
-			{
-				Id:   "A",
-				Cost: 10,
-			},
-			{
-				Id:   "C",
-				Cost: 10,
-			},
-		},
-	}
-
-	rn_C := RoadNode{
-		Node: Node{
-			Id: "C",
-		},
-		Edges: []Edge{
-			{
-				Id:   "B",
-				Cost: 10,
-			},
-			{
-				Id:   "D",
-				Cost: 10,
-			},
-			{
-				Id:   "E",
-				Cost: 10,
-			},
-		},
-	}
-
-	rn_D := RoadNode{
-		Node: Node{
-			Id: "D",
-		},
-		Edges: []Edge{
-			{
-				Id:   "C",
-				Cost: 10,
-			},
-		},
-	}
-
-	rn_E := RoadNode{
-		Node: Node{
-			Id: "E",
-		},
-		Edges: []Edge{
-			{
-				Id:   "C",
-				Cost: 10,
-			},
-		},
-	}
-
-	rm := make(RoadMap)
-	rm["A"] = rn_A
-	rm["B"] = rn_B
-	rm["C"] = rn_C
-	rm["D"] = rn_D
-	rm["E"] = rn_E
-
-	fmt.Println(rm)
-	rm.Simplify()
-	fmt.Println(rm)
-}
-
 type WayMap map[WayId][]SpatialNode
 
 type WayId string
@@ -186,4 +101,75 @@ type SpatialNode struct {
 	OrderNumber int
 	Longitude   float32
 	Latitude    float32
+}
+
+//I need a way to get the roads that are in the main network and eliminate those in the smaller networks
+/*
+Count the number of total nodes.
+Get the first nodeID
+
+While I haven't visited every node keep searching
+A function that takes the nodeID that you pass to it and a small roadmap and the total roadmap
+Appends the node at the nodeID to the small roadmap
+Then loops over the nodes in the edges and if it finds one that isn't in the map call itself passing the nodeID and the small roadmap
+	setting that to the smallroadmap it has.
+If it finishes looping over the edges without finding one missing return the small roadmap.
+
+In the main function save that smaller roadmap to a slice of roadmaps.
+
+When the loop is finished choose the roadmap with the largest number of nodes connected within it and return that.
+*/
+
+func EliminateDisconnectedNodes(startingRoadMap RoadMap) RoadMap {
+	var subsetRoadMap RoadMap
+	discoveredNodes := make(map[NodeId]struct{})
+	listOfSubsetRoadMap := []RoadMap{}
+	safetyCounter := 0
+	var startKey NodeId
+	for len(discoveredNodes) < len(startingRoadMap) {
+
+		for k := range startingRoadMap {
+			if _, ok := discoveredNodes[k]; !ok {
+				startKey = k
+				break
+			}
+		}
+
+		subsetRoadMap = RoadMap{}
+		subsetRoadMap = findConnectedNodes(startKey, subsetRoadMap, startingRoadMap)
+
+		for k := range subsetRoadMap {
+			discoveredNodes[k] = struct{}{}
+		}
+
+		listOfSubsetRoadMap = append(listOfSubsetRoadMap, subsetRoadMap)
+
+		if safetyCounter > 12 {
+			fmt.Println("More than 12 splits. Exiting...")
+			break
+		}
+		safetyCounter++
+	}
+
+	max := 0
+	max_index := 0
+	for index, subset := range listOfSubsetRoadMap {
+		//fmt.Println(len(subset))
+		if len(subset) > max {
+			max_index = index
+			max = len(subset)
+		}
+	}
+
+	return listOfSubsetRoadMap[max_index]
+}
+
+func findConnectedNodes(startingNode NodeId, subsetRoadMap, totalRoadMap RoadMap) RoadMap {
+	subsetRoadMap[startingNode] = totalRoadMap[startingNode]
+	for _, edge := range subsetRoadMap[startingNode].Edges {
+		if _, ok := subsetRoadMap[edge.Id]; !ok {
+			subsetRoadMap = findConnectedNodes(edge.Id, subsetRoadMap, totalRoadMap)
+		}
+	}
+	return subsetRoadMap
 }
