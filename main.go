@@ -18,7 +18,13 @@ func main() {
 	streetmap := convert.CreateRoadMap(waymap)
 	streetmap.Simplify()
 	streetmap = roadmap.EliminateDisconnectedNodes(streetmap)
-	fmt.Println(len(streetmap))
-	fmt.Println(streetmap)
+	structuremap := convert.CreateBuildingMap(overpassData.BuildingResponse, streetmap)
+	fmt.Println(len(structuremap))
 	overpass.SummarizeOverpassData(overpassData)
+	/*
+		Create the people
+		assign buildings to those people for work, leisure, home
+		create schedules for the people to go to each location
+
+	*/
 }

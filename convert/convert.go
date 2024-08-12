@@ -4,6 +4,7 @@ import (
 	"math"
 	"strconv"
 
+	"github.com/KidMuon/unbearable_traffic/buildingmap"
 	"github.com/KidMuon/unbearable_traffic/overpass"
 	"github.com/KidMuon/unbearable_traffic/roadmap"
 )
@@ -83,4 +84,68 @@ func distance(lon1, lat1, lon2, lat2 float32) float32 {
 	a := lon2 - lon1
 	b := lat2 - lat1
 	return float32(math.Hypot(float64(a), float64(b)))
+}
+
+func CreateBuildingMap(overpass_buildings overpass.OverpassBuildingResponse, road_map roadmap.RoadMap) buildingmap.BuildingMap {
+	bmap := make(buildingmap.BuildingMap)
+
+	buildings := []buildingmap.Building{}
+	for _, oBuilding := range overpass_buildings.Buildings {
+		bid := buildingmap.BuildingID(oBuilding.Id)
+
+		bn := []roadmap.Node{}
+		for _, bnode := range oBuilding.BuildingNodes {
+			for _, node := range overpass_buildings.Nodes {
+				if node.Id == bnode.Reference_id {
+					longitude, _ := strconv.ParseFloat(node.Lon, 32)
+					latitude, _ := strconv.ParseFloat(node.Lat, 32)
+
+					bn = append(bn, roadmap.Node{
+						Id:        roadmap.NodeId(node.Id),
+						Longitude: float32(longitude),
+						Latitude:  float32(latitude),
+					})
+					break
+				}
+			}
+		}
+
+		bt := buildingmap.BuildingType("")
+		for _, tag := range oBuilding.BuildingTags {
+			if tag.Key != "building" {
+				continue
+			}
+			switch tag.Value {
+			case "commercial", "retail":
+				bt = buildingmap.CommercialBuilding
+			case "leisure":
+				bt = buildingmap.LeisureBuilding
+			case "school":
+				bt = buildingmap.SchoolBuilding
+			default:
+				bt = buildingmap.ResidentialBuilding
+			}
+		}
+
+		b := buildingmap.Building{
+			Id:              bid,
+			Nodes:           bn,
+			BuildingType:    bt,
+			ClosestRoadNode: roadmap.NodeId(""),
+		}
+
+		b.AssignAverageLocation()
+		b.AssignClosestRoadNode(road_map)
+
+		buildings = append(buildings, b)
+	}
+
+	for _, bldg := range buildings {
+		if bldg.ClosestRoadNode == roadmap.NodeId("") {
+			continue
+		}
+		bmap[bldg.Id] = bldg
+	}
+
+	return bmap
 }

@@ -12,6 +12,7 @@ type OverpassBuildingResponse struct {
 }
 
 type OverpassAPIBuilding struct {
+	Id            string               `xml:"id,attr"`
 	BuildingNodes []OverpassAPIWayNode `xml:"nd"`
 	BuildingTags  []OverpassAPIWayTag  `xml:"tag"`
 }
