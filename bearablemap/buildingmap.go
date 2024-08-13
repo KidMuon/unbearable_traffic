@@ -8,10 +8,12 @@ type BuildingID string
 
 type BuildingType string
 
-var CommercialBuilding BuildingType = "commercial"
-var LeisureBuilding BuildingType = "leisure"
-var ResidentialBuilding BuildingType = "residential"
-var SchoolBuilding BuildingType = "school"
+const (
+	CommercialBuilding  BuildingType = "commercial"
+	LeisureBuilding     BuildingType = "leisure"
+	ResidentialBuilding BuildingType = "residential"
+	SchoolBuilding      BuildingType = "school"
+)
 
 type Building struct {
 	Id              BuildingID
@@ -39,7 +41,7 @@ func (b *Building) AssignAverageLocation() {
 
 func (b *Building) AssignClosestRoadNode(r RoadMap) {
 	minDistance := 10.0
-	thresholdDistance := 0.05
+	thresholdDistance := 0.005 //Very Roughly half a kilometer
 	var closest NodeId
 
 	var distance float64

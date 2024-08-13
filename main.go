@@ -7,6 +7,7 @@ import (
 	"github.com/KidMuon/unbearable_traffic/bearablemap"
 	"github.com/KidMuon/unbearable_traffic/convert"
 	"github.com/KidMuon/unbearable_traffic/overpass"
+	"github.com/KidMuon/unbearable_traffic/resident"
 )
 
 func main() {
@@ -27,4 +28,8 @@ func main() {
 		create schedules for the people to go to each location
 
 	*/
+	population := resident.CreatePopulation(9, structuremap)
+	for _, pop := range population {
+		fmt.Println(pop)
+	}
 }
