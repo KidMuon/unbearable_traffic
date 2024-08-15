@@ -89,3 +89,119 @@ type RouteSection struct {
 	ToNode       bearablemap.NodeId
 	Time         int
 }
+
+type AstarRouteMap map[bearablemap.NodeId]AstarRow
+
+type AstarRow struct {
+	F    float64
+	G    float64
+	H    float64
+	Last bearablemap.NodeId
+}
+
+type openSet map[bearablemap.NodeId]float64
+
+func (p Person) CalculateRoute(roadmap bearablemap.RoadMap, startTime int) Route {
+	optimalRoute := Route{}
+
+	var startNode, endNode bearablemap.NodeId
+	startNode = p.LocationsToVisit[p.CurrentLocationIndex]
+	if p.CurrentLocationIndex >= len(p.LocationsToVisit) {
+		endNode = p.LocationsToVisit[0]
+	} else {
+		endNode = p.LocationsToVisit[p.CurrentLocationIndex+1]
+	}
+
+	if startNode == endNode {
+		return optimalRoute
+	}
+
+	openset := make(openSet)
+	routemap := make(AstarRouteMap)
+	routemap[startNode] = AstarRow{
+		F:    0.0,
+		G:    0.0,
+		H:    0.0,
+		Last: "",
+	}
+
+	optimalRoute = AStar(startNode, endNode, roadmap, routemap, openset)
+
+	for i := 0; i < len(optimalRoute.Sections); i++ {
+		optimalRoute.Sections[i].Time += startTime
+	}
+
+	return optimalRoute
+}
+
+func AStar(current, end bearablemap.NodeId, roadmap bearablemap.RoadMap, routemap AstarRouteMap, openset openSet) Route {
+
+	var route Route
+
+	for _, edge := range roadmap[current].Edges {
+		nid := edge.Id
+		if nid == routemap[current].Last {
+			continue
+		}
+
+		g := routemap[current].G + float64(edge.Cost)
+		h := distanceBetweenNodes(roadmap[current].Node, roadmap[nid].Node)
+		f := g + h
+		if _, ok := routemap[nid]; !ok || routemap[nid].F > f {
+			routemap[nid] = AstarRow{
+				F:    f,
+				G:    g,
+				H:    h,
+				Last: current,
+			}
+			openset[nid] = f
+		}
+	}
+
+	var next bearablemap.NodeId
+	min_f := 1000.0
+	for oid, f := range openset {
+		if f < min_f {
+			min_f = f
+			next = oid
+		}
+	}
+
+	if next != end {
+		delete(openset, next)
+		route = AStar(next, end, roadmap, routemap, openset)
+	} else {
+		toNode := end //before the loop set toNode to Next
+		for {
+			fromNode := routemap[toNode].Last
+			if fromNode == bearablemap.NodeId("") {
+				break
+			}
+
+			wayid := bearablemap.WayId("")
+			for _, wi := range roadmap[fromNode].Ways {
+				for _, wj := range roadmap[toNode].Ways {
+					if wi == wj {
+						wayid = wi
+					}
+				}
+			}
+
+			section := RouteSection{
+				StreetNumber: wayid,
+				FromNode:     fromNode,
+				ToNode:       toNode,
+				Time:         int(routemap[toNode].F),
+			}
+
+			route.Sections = append(route.Sections, section)
+			toNode = fromNode
+		}
+	}
+
+	return route
+}
+
+func distanceBetweenNodes(m, n bearablemap.Node) float64 {
+	return 1.0
+}

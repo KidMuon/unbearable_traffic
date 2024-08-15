@@ -1,9 +1,9 @@
 <overpass_standard>
     <bounding_box>
-        <south>33.64507</south>
+        <south>33.27944</south>
         <west>-112.37045</west>
         <north>33.65507</north>
-        <east>-112.36045</east>
+        <east>-111.83430</east>
     </bounding_box>
     <street>
         <filter k="highway" v="."/>

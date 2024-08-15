@@ -6,14 +6,14 @@ type NodeId string
 
 type Node struct {
 	Id        NodeId
-	Longitude float32
-	Latitude  float32
+	Longitude float64
+	Latitude  float64
 }
 
 // Which node is the edge going to
 type Edge struct {
 	Id   NodeId
-	Cost float32
+	Cost float64
 	/* Speed and Length */
 }
 
@@ -50,6 +50,12 @@ func (rn *RoadNode) RemoveEdgeById(id NodeId) {
 }
 
 type RoadMap map[NodeId]RoadNode
+type RoadIndex map[IndexPoint][]NodeId
+
+type IndexPoint struct {
+	IndexLongitude float64
+	IndexLatitude  float64
+}
 
 func (rm RoadMap) AddRoadNode(rn RoadNode) {
 	rm[rn.Node.Id] = rn
@@ -101,8 +107,8 @@ type SpatialNode struct {
 	Id          NodeId
 	OrderNumber int
 	SpeedLimit  int
-	Longitude   float32
-	Latitude    float32
+	Longitude   float64
+	Latitude    float64
 }
 
 func EliminateDisconnectedNodes(startingRoadMap RoadMap) RoadMap {

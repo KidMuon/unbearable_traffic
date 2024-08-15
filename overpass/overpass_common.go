@@ -44,10 +44,10 @@ type OverpassAPIFilter struct {
 }
 
 type OverpassAPIBoundingBox struct {
-	south float32
-	west  float32
-	north float32
-	east  float32
+	south float64
+	west  float64
+	north float64
+	east  float64
 }
 
 func (r OverpassAPIRequest) GetString() (request string) {
@@ -89,20 +89,20 @@ func ParseAsBoundingBox(s string) (OverpassAPIBoundingBox, error) {
 		return OverpassAPIBoundingBox{}, errors.New("incorrect number of values passed")
 	}
 
-	coordinateValues := make([]float32, 4)
+	coordinateValues := make([]float64, 4)
 	for i, coordinateString := range listOfCoordinates {
-		coordinateCandidate, err := strconv.ParseFloat(strings.TrimSpace(coordinateString), 32)
+		coordinateCandidate, err := strconv.ParseFloat(strings.TrimSpace(coordinateString), 64)
 		if err != nil {
-			err_string := fmt.Sprintf("error converting %s to Float32: %s", coordinateString, err)
+			err_string := fmt.Sprintf("error converting %s to float64: %s", coordinateString, err)
 			return OverpassAPIBoundingBox{}, errors.New(err_string)
 		}
-		coordinateValues[i] = float32(coordinateCandidate)
+		coordinateValues[i] = float64(coordinateCandidate)
 	}
 
 	return CreateBoundingBox(coordinateValues[0], coordinateValues[1], coordinateValues[2], coordinateValues[3])
 }
 
-func CreateBoundingBox(s, w, n, e float32) (OverpassAPIBoundingBox, error) {
+func CreateBoundingBox(s, w, n, e float64) (OverpassAPIBoundingBox, error) {
 	boundingBox := OverpassAPIBoundingBox{
 		south: s,
 		west:  w,

@@ -7,10 +7,10 @@ import (
 
 type OverpassAPI_config struct {
 	Bbox struct {
-		South float32 `xml:"south"`
-		West  float32 `xml:"west"`
-		North float32 `xml:"north"`
-		East  float32 `xml:"east"`
+		South float64 `xml:"south"`
+		West  float64 `xml:"west"`
+		North float64 `xml:"north"`
+		East  float64 `xml:"east"`
 	} `xml:"bounding_box"`
 	Street struct {
 		Filters []struct {

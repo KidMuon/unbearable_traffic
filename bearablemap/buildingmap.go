@@ -15,33 +15,34 @@ const (
 	SchoolBuilding      BuildingType = "school"
 )
 
+const BuildingThresholdDistance float64 = 0.005 //Roughly half a kilometer
+
 type Building struct {
 	Id              BuildingID
 	ClosestRoadNode NodeId
 	BuildingType    BuildingType
 	Nodes           []Node
 	AverageLocation struct {
-		Longitude float32
-		Latitude  float32
+		Longitude float64
+		Latitude  float64
 	}
 }
 
 type BuildingMap map[BuildingID]Building
 
 func (b *Building) AssignAverageLocation() {
-	var sumLongitude float32 = 0.0
-	var sumLatitude float32 = 0.0
+	var sumLongitude float64 = 0.0
+	var sumLatitude float64 = 0.0
 	for _, node := range b.Nodes {
 		sumLongitude += node.Longitude
 		sumLatitude += node.Latitude
 	}
-	b.AverageLocation.Latitude = sumLatitude / float32(len(b.Nodes))
-	b.AverageLocation.Longitude = sumLongitude / float32(len(b.Nodes))
+	b.AverageLocation.Latitude = sumLatitude / float64(len(b.Nodes))
+	b.AverageLocation.Longitude = sumLongitude / float64(len(b.Nodes))
 }
 
 func (b *Building) AssignClosestRoadNode(r RoadMap) {
 	minDistance := 10.0
-	thresholdDistance := 0.005 //Very Roughly half a kilometer
 	var closest NodeId
 
 	var distance float64
@@ -55,7 +56,7 @@ func (b *Building) AssignClosestRoadNode(r RoadMap) {
 		}
 	}
 
-	if distance < thresholdDistance {
+	if minDistance < BuildingThresholdDistance {
 		b.ClosestRoadNode = closest
 	}
 }
