@@ -19,6 +19,7 @@ type Edge struct {
 
 type RoadNode struct {
 	Node  Node
+	Ways  []WayId
 	Edges []Edge
 }
 
@@ -99,26 +100,10 @@ type WayId string
 type SpatialNode struct {
 	Id          NodeId
 	OrderNumber int
+	SpeedLimit  int
 	Longitude   float32
 	Latitude    float32
 }
-
-//I need a way to get the roads that are in the main network and eliminate those in the smaller networks
-/*
-Count the number of total nodes.
-Get the first nodeID
-
-While I haven't visited every node keep searching
-A function that takes the nodeID that you pass to it and a small roadmap and the total roadmap
-Appends the node at the nodeID to the small roadmap
-Then loops over the nodes in the edges and if it finds one that isn't in the map call itself passing the nodeID and the small roadmap
-	setting that to the smallroadmap it has.
-If it finishes looping over the edges without finding one missing return the small roadmap.
-
-In the main function save that smaller roadmap to a slice of roadmaps.
-
-When the loop is finished choose the roadmap with the largest number of nodes connected within it and return that.
-*/
 
 func EliminateDisconnectedNodes(startingRoadMap RoadMap) RoadMap {
 	var subsetRoadMap RoadMap

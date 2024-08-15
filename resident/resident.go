@@ -67,3 +67,25 @@ func CreatePopulation(n int, structuremap bearablemap.BuildingMap) []Person {
 	}
 	return population
 }
+
+func (p Person) ReadyToTravel(time int) bool {
+	return p.DepartureTimes[p.CurrentLocationIndex] == time
+}
+
+func (p *Person) Travel() {
+	p.CurrentLocationIndex++
+	if p.CurrentLocationIndex >= len(p.LocationsToVisit) {
+		p.CurrentLocationIndex = 0
+	}
+}
+
+type Route struct {
+	Sections []RouteSection
+}
+
+type RouteSection struct {
+	StreetNumber bearablemap.WayId
+	FromNode     bearablemap.NodeId
+	ToNode       bearablemap.NodeId
+	Time         int
+}

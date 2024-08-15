@@ -10,8 +10,7 @@ import (
 
 func CreateRoadMap(waymap bearablemap.WayMap) bearablemap.RoadMap {
 	roadm := make(bearablemap.RoadMap)
-	//First populate the roadnodes in the roadmap
-	for _, sliceOfSpatialNodes := range waymap {
+	for wid, sliceOfSpatialNodes := range waymap {
 		for i := 0; i < len(sliceOfSpatialNodes); i++ {
 			sn := sliceOfSpatialNodes[i]
 			if _, ok := roadm[sn.Id]; !ok {
@@ -21,6 +20,13 @@ func CreateRoadMap(waymap bearablemap.WayMap) bearablemap.RoadMap {
 						Longitude: sn.Longitude,
 						Latitude:  sn.Latitude,
 					},
+					Ways: []bearablemap.WayId{wid},
+				}
+			} else {
+				roadm[sn.Id] = bearablemap.RoadNode{
+					Node:  roadm[sn.Id].Node,
+					Ways:  append(roadm[sn.Id].Ways, wid),
+					Edges: roadm[sn.Id].Edges,
 				}
 			}
 
@@ -28,7 +34,13 @@ func CreateRoadMap(waymap bearablemap.WayMap) bearablemap.RoadMap {
 				continue
 			}
 			sn_prev := sliceOfSpatialNodes[i-1]
-			edge_cost := distance(sn.Longitude, sn.Latitude, sn_prev.Longitude, sn_prev.Latitude)
+			edge_cost := distance(sn.Longitude, sn.Latitude, sn_prev.Longitude, sn_prev.Latitude) * 4 * 69
+			if sn.SpeedLimit == 0 && sn_prev.SpeedLimit == 0 {
+				edge_cost /= 25.0 //Very rough conversion to get edge_cost in units of simulation time
+			} else {
+				edge_cost /= float32(math.Max(float64(sn.SpeedLimit), float64(sn_prev.SpeedLimit)))
+			}
+
 			edge := bearablemap.Edge{
 				Id:   sn_prev.Id,
 				Cost: edge_cost,
@@ -55,6 +67,7 @@ func CreateWayMap(overpass_ways overpass.OverpassStreetResponse) bearablemap.Way
 	waymap := make(bearablemap.WayMap)
 	var longitude float64
 	var latitude float64
+	var speedlimit int64
 	for _, way := range overpass_ways.Streets {
 		sn := []bearablemap.SpatialNode{}
 		orderID := 1
@@ -65,9 +78,17 @@ func CreateWayMap(overpass_ways overpass.OverpassStreetResponse) bearablemap.Way
 					latitude, _ = strconv.ParseFloat(node.Lat, 32)
 				}
 			}
+
+			for _, tag := range way.StreetTags {
+				if tag.Key == "maxspeed" {
+					speedlimit, _ = strconv.ParseInt(tag.Value, 10, 64)
+				}
+			}
+			//Loop over the tags and include speed_limit
 			sn = append(sn, bearablemap.SpatialNode{
 				Id:          bearablemap.NodeId(wayNode.Reference_id),
 				OrderNumber: orderID,
+				SpeedLimit:  int(speedlimit),
 				Longitude:   float32(longitude),
 				Latitude:    float32(latitude),
 			})
