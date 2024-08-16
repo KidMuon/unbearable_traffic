@@ -16,16 +16,23 @@ func main() {
 		log.Fatal(err)
 	}
 	overpass.SummarizeOverpassData(overpassData)
+
 	waymap := convert.CreateWayMap(overpassData.StreetResponse)
+	fmt.Println("Ways Created.")
+
 	streetmap := convert.CreateRoadMap(waymap)
+	fmt.Println("Streets Created.")
 	streetmap.Simplify()
+	fmt.Println("Streets Simplified.")
 	streetmap = bearablemap.EliminateDisconnectedNodes(streetmap)
-	fmt.Println("Streets Mapped...")
+	fmt.Println("Streets Finished Mapping.")
 	fmt.Println(len(streetmap))
-	/* fmt.Println(streetmap["1738652113"]) */
+
 	structuremap := convert.CreateBuildingMap(overpassData.BuildingResponse, streetmap)
-	/* fmt.Println(len(structuremap)) */
-	fmt.Println("Generating Population....")
+	fmt.Println("Building Map Created.")
+	fmt.Println(len(structuremap))
+
+	fmt.Println("Generating Population.")
 	population := resident.CreatePopulation(1000, structuremap)
 	fmt.Println("Population created. Generating Routes...")
 	for _, pop := range population {

@@ -1,7 +1,5 @@
 package bearablemap
 
-import "fmt"
-
 type NodeId string
 
 type Node struct {
@@ -53,8 +51,8 @@ type RoadMap map[NodeId]RoadNode
 type RoadIndex map[IndexPoint][]NodeId
 
 type IndexPoint struct {
-	IndexLongitude float64
-	IndexLatitude  float64
+	IndexLongitude int
+	IndexLatitude  int
 }
 
 func (rm RoadMap) AddRoadNode(rn RoadNode) {
@@ -99,6 +97,24 @@ func (rm RoadMap) simplify_RemoveRoadNode(id NodeId) {
 	delete(rm, id)
 }
 
+func (rm RoadMap) GetIndex() RoadIndex {
+	index := make(RoadIndex)
+	for _, rn := range rm {
+		lon := int((rn.Node.Longitude - 0.005) * 100)
+		lat := int((rn.Node.Latitude - 0.005) * 100)
+		ip := IndexPoint{
+			IndexLongitude: lon,
+			IndexLatitude:  lat,
+		}
+		if _, ok := index[ip]; ok {
+			index[ip] = append(index[ip], rn.Node.Id)
+		} else {
+			index[ip] = []NodeId{rn.Node.Id}
+		}
+	}
+	return index
+}
+
 type WayMap map[WayId][]SpatialNode
 
 type WayId string
@@ -115,10 +131,8 @@ func EliminateDisconnectedNodes(startingRoadMap RoadMap) RoadMap {
 	var subsetRoadMap RoadMap
 	discoveredNodes := make(map[NodeId]struct{})
 	listOfSubsetRoadMap := []RoadMap{}
-	safetyCounter := 0
 	var startKey NodeId
 	for len(discoveredNodes) < len(startingRoadMap) {
-
 		for k := range startingRoadMap {
 			if _, ok := discoveredNodes[k]; !ok {
 				startKey = k
@@ -134,21 +148,14 @@ func EliminateDisconnectedNodes(startingRoadMap RoadMap) RoadMap {
 		}
 
 		listOfSubsetRoadMap = append(listOfSubsetRoadMap, subsetRoadMap)
-
-		if safetyCounter > 12 {
-			fmt.Println("More than 12 splits. Exiting...")
-			break
-		}
-		safetyCounter++
 	}
 
-	max := 0
+	max_subset_length := 0
 	max_index := 0
 	for index, subset := range listOfSubsetRoadMap {
-		//fmt.Println(len(subset))
-		if len(subset) > max {
+		if len(subset) > max_subset_length {
 			max_index = index
-			max = len(subset)
+			max_subset_length = len(subset)
 		}
 	}
 

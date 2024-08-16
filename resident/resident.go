@@ -1,6 +1,7 @@
 package resident
 
 import (
+	"math"
 	"math/rand"
 
 	"github.com/KidMuon/unbearable_traffic/bearablemap"
@@ -203,5 +204,7 @@ func AStar(current, end bearablemap.NodeId, roadmap bearablemap.RoadMap, routema
 }
 
 func distanceBetweenNodes(m, n bearablemap.Node) float64 {
-	return 1.0
+	a := m.Longitude - n.Longitude
+	b := m.Latitude - n.Latitude
+	return math.Hypot(a, b)
 }

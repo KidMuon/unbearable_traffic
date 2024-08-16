@@ -41,22 +41,57 @@ func (b *Building) AssignAverageLocation() {
 	b.AverageLocation.Longitude = sumLongitude / float64(len(b.Nodes))
 }
 
-func (b *Building) AssignClosestRoadNode(r RoadMap) {
-	minDistance := 10.0
-	var closest NodeId
+func (b *Building) AssignClosestRoadNode(r RoadMap, roadindex RoadIndex) {
+	minimumFoundDistance := 10.0
+	var closestFoundNode NodeId
+
+	searchPoints := []IndexPoint{
+		{
+			IndexLongitude: int(b.AverageLocation.Longitude * 100),
+			IndexLatitude:  int(b.AverageLocation.Latitude * 100),
+		},
+		{
+			IndexLongitude: int(b.AverageLocation.Longitude * 100),
+			IndexLatitude:  int(b.AverageLocation.Latitude * 100),
+		},
+		{
+			IndexLongitude: int(b.AverageLocation.Longitude * 100),
+			IndexLatitude:  int(b.AverageLocation.Latitude * 100),
+		},
+		{
+			IndexLongitude: int(b.AverageLocation.Longitude * 100),
+			IndexLatitude:  int(b.AverageLocation.Latitude * 100),
+		},
+	}
+
+	for _, sp := range searchPoints {
+		nodesToSearch := roadindex[sp]
+		minDist, closest := b.searchNodes(nodesToSearch, r)
+		if minDist < minimumFoundDistance {
+			minimumFoundDistance = minDist
+			closestFoundNode = closest
+		}
+	}
+
+	if minimumFoundDistance < BuildingThresholdDistance {
+		b.ClosestRoadNode = closestFoundNode
+	}
+}
+
+func (b *Building) searchNodes(nodeids []NodeId, r RoadMap) (minDistance float64, closest NodeId) {
+	minDistance = 10.0
 
 	var distance float64
-	for _, v := range r {
+	for _, nid := range nodeids {
+		v := r[nid]
 		a := b.AverageLocation.Longitude - v.Node.Longitude
 		b := b.AverageLocation.Latitude - v.Node.Latitude
-		distance = math.Hypot(float64(a), float64(b))
+		distance = math.Hypot(a, b)
 		if distance < minDistance {
 			minDistance = distance
 			closest = v.Node.Id
 		}
 	}
 
-	if minDistance < BuildingThresholdDistance {
-		b.ClosestRoadNode = closest
-	}
+	return minDistance, closest
 }

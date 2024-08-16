@@ -38,7 +38,7 @@ func CreateRoadMap(waymap bearablemap.WayMap) bearablemap.RoadMap {
 			if sn.SpeedLimit == 0 && sn_prev.SpeedLimit == 0 {
 				edge_cost /= 25.0 //Very rough conversion to get edge_cost in units of simulation time
 			} else {
-				edge_cost /= float32(math.Max(float64(sn.SpeedLimit), float64(sn_prev.SpeedLimit)))
+				edge_cost /= float64(math.Max(float64(sn.SpeedLimit), float64(sn_prev.SpeedLimit)))
 			}
 
 			edge := bearablemap.Edge{
@@ -68,29 +68,40 @@ func CreateWayMap(overpass_ways overpass.OverpassStreetResponse) bearablemap.Way
 	var longitude float64
 	var latitude float64
 	var speedlimit int64
+
+	type nodeLonLat struct {
+		lon float64
+		lat float64
+	}
+	nodeSpatial := make(map[string]nodeLonLat)
+	for _, node := range overpass_ways.Nodes {
+		loop_lon, _ := strconv.ParseFloat(node.Lon, 64)
+		loop_lat, _ := strconv.ParseFloat(node.Lat, 64)
+		nodeSpatial[node.Id] = nodeLonLat{
+			lon: loop_lon,
+			lat: loop_lat,
+		}
+	}
+
 	for _, way := range overpass_ways.Streets {
 		sn := []bearablemap.SpatialNode{}
 		orderID := 1
 		for _, wayNode := range way.StreetNodes {
-			for _, node := range overpass_ways.Nodes {
-				if node.Id == wayNode.Reference_id {
-					longitude, _ = strconv.ParseFloat(node.Lon, 32)
-					latitude, _ = strconv.ParseFloat(node.Lat, 32)
-				}
-			}
+			longitude = nodeSpatial[wayNode.Reference_id].lon
+			latitude = nodeSpatial[wayNode.Reference_id].lat
 
 			for _, tag := range way.StreetTags {
 				if tag.Key == "maxspeed" {
 					speedlimit, _ = strconv.ParseInt(tag.Value, 10, 64)
 				}
 			}
-			//Loop over the tags and include speed_limit
+
 			sn = append(sn, bearablemap.SpatialNode{
 				Id:          bearablemap.NodeId(wayNode.Reference_id),
 				OrderNumber: orderID,
 				SpeedLimit:  int(speedlimit),
-				Longitude:   float32(longitude),
-				Latitude:    float32(latitude),
+				Longitude:   longitude,
+				Latitude:    latitude,
 			})
 			orderID++
 		}
@@ -100,14 +111,31 @@ func CreateWayMap(overpass_ways overpass.OverpassStreetResponse) bearablemap.Way
 	return waymap
 }
 
-func distance(lon1, lat1, lon2, lat2 float32) float32 {
+func distance(lon1, lat1, lon2, lat2 float64) float64 {
 	a := lon2 - lon1
 	b := lat2 - lat1
-	return float32(math.Hypot(float64(a), float64(b)))
+	return float64(math.Hypot(float64(a), float64(b)))
 }
 
 func CreateBuildingMap(overpass_buildings overpass.OverpassBuildingResponse, road_map bearablemap.RoadMap) bearablemap.BuildingMap {
 	bmap := make(bearablemap.BuildingMap)
+	road_index := road_map.GetIndex()
+
+	var longitude float64
+	var latitude float64
+	type nodeLonLat struct {
+		lon float64
+		lat float64
+	}
+	nodeSpatial := make(map[string]nodeLonLat)
+	for _, node := range overpass_buildings.Nodes {
+		loop_lon, _ := strconv.ParseFloat(node.Lon, 64)
+		loop_lat, _ := strconv.ParseFloat(node.Lat, 64)
+		nodeSpatial[node.Id] = nodeLonLat{
+			lon: loop_lon,
+			lat: loop_lat,
+		}
+	}
 
 	buildings := []bearablemap.Building{}
 	for _, oBuilding := range overpass_buildings.Buildings {
@@ -115,19 +143,15 @@ func CreateBuildingMap(overpass_buildings overpass.OverpassBuildingResponse, roa
 
 		bn := []bearablemap.Node{}
 		for _, bnode := range oBuilding.BuildingNodes {
-			for _, node := range overpass_buildings.Nodes {
-				if node.Id == bnode.Reference_id {
-					longitude, _ := strconv.ParseFloat(node.Lon, 32)
-					latitude, _ := strconv.ParseFloat(node.Lat, 32)
+			longitude = nodeSpatial[bnode.Reference_id].lon
+			latitude = nodeSpatial[bnode.Reference_id].lat
 
-					bn = append(bn, bearablemap.Node{
-						Id:        bearablemap.NodeId(node.Id),
-						Longitude: float32(longitude),
-						Latitude:  float32(latitude),
-					})
-					break
-				}
-			}
+			bn = append(bn, bearablemap.Node{
+				Id:        bearablemap.NodeId(bnode.Reference_id),
+				Longitude: float64(longitude),
+				Latitude:  float64(latitude),
+			})
+
 		}
 
 		bt := bearablemap.BuildingType("")
@@ -155,7 +179,7 @@ func CreateBuildingMap(overpass_buildings overpass.OverpassBuildingResponse, roa
 		}
 
 		b.AssignAverageLocation()
-		b.AssignClosestRoadNode(road_map)
+		b.AssignClosestRoadNode(road_map, road_index)
 
 		buildings = append(buildings, b)
 	}
